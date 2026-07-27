@@ -238,3 +238,61 @@ features (exponential decay on resolution history, or restricting the whole feat
 a trailing window instead of all history) — note this is *not* the same as the trailing-volume
 feature already tested, which added a window feature alongside unchanged lifetime counts rather
 than replacing the snapshot.
+
+---
+
+## 2026-07-27 21:10 UTC — Deployment attempt: code/artifacts ready, blocked on a payment decision
+
+**Status: NOT live yet. Do not add a URL to README/resume until this is resolved.**
+
+**What's done, verified working:**
+- Fixed hardcoded `device="cuda"` in `api.py` and all training scripts (would have crashed
+  outright on any CPU-only host) -- now `"cuda" if torch.cuda.is_available() else "cpu"`.
+- Fixed a real bug in `llm.py`'s `.env` parser: `HF_TOKEN = hf_xxx # Full access` was being
+  parsed with the trailing comment folded into the token value, so the "valid" token failed
+  auth entirely. Parser now strips ` #comment` suffixes.
+- All 5 projects' trained artifacts (107MB) pushed to a public HF Hub model repo:
+  `MegaKnight9x/issue-assignee-recommender-artifacts` (`scripts/10_push_artifacts_to_hf.py`).
+  Note the HF username is `MegaKnight9x`, **not** `Harshit-Lalwani` (the GitHub handle) --
+  the first deploy attempt 403'd until this was corrected.
+- `api.py` now downloads artifacts from that HF Hub repo at startup if not present locally
+  (`_ensure_artifacts_local`), so a plain clone with no local training step can serve.
+- Added a startup warmup call and a minimal HTML landing page at `/` (per the reviewed plan).
+- `Dockerfile` + `requirements-serve.txt` written: CPU-only torch installed explicitly first
+  (`--index-url https://download.pytorch.org/whl/cpu`) so the default ~2GB CUDA wheel is never
+  pulled. `src/` and `data/` are kept as siblings under `/app`, matching local dev's
+  `--app-dir src` layout exactly, so `api.py`'s relative path resolution needs no extra env vars.
+- **Validated the whole CPU path locally** (Docker isn't installed in this sandbox, so this was
+  the honest substitute): ran the API with `CUDA_VISIBLE_DEVICES=""` forcing CPU. Real
+  measurements, not estimates:
+  - Cold start: ~7s.
+  - Memory: **1.14GB RSS** for all 5 projects loaded (measured via `ps`, not projected).
+  - Warm request latency: **17-32ms** across KAFKA and SPARK (5 requests each) -- actually
+    comparable to or better than the ~40ms GPU figure currently in the README/resume, likely
+    because a model this small pays more in GPU kernel-launch/transfer overhead than it saves,
+    at batch size 1.
+
+**What's blocking a live deployment:** Hugging Face Spaces now requires a **PRO subscription
+($9/month)** to run Docker or Gradio Spaces on personal accounts, even on the nominally "free"
+CPU Basic tier -- confirmed via a live 402 Payment Required response, then verified against
+current HF forum/docs discussion, not assumed. The plan this session was following (from an
+earlier Claude Code session) assumed this tier was free; that assumption is out of date as of
+2026. This is a real money decision, not something to make unilaterally while the user is
+asleep -- did not sign up for anything.
+
+**Revisit / next steps (this is the actual remaining work):**
+1. Decide: pay for HF PRO (simplest -- everything above is already built for this exact path,
+   would take ~10 minutes to finish: `python scripts/11_deploy_hf_space.py`, wait for the
+   Docker build, confirm `/health`), or pick a different host (Google Cloud Run's free tier is
+   usually genuinely free for low-traffic demo use, but needs a GCP account + billing profile
+   set up by the user first; Render's free tier is 512MB, tighter than the measured 1.14GB
+   footprint unless fewer than 5 projects are served).
+2. Once actually live: re-measure latency on the real hosted instance (the 17-32ms above is
+   this local dev machine, 12 cores -- a free-tier shared CPU will likely be slower; don't
+   assume the local number transfers unchanged) and update the README's serving-latency line.
+3. Only then: add the live URL to `README.md` and to `/root/Resume/Baselines/MLE.tex`'s Jira
+   project bullet, updating the latency figure to whatever's actually measured on the live
+   instance. The current resume bullet says "deployed... at ~40ms/request" -- both the word
+   "deployed" (nothing is live yet) and the number (GPU-measured, superseded) need to change
+   together, not separately, and should be reviewed by the user before finalizing since this
+   goes on their actual resume.

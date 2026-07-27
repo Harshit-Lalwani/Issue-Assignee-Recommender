@@ -18,7 +18,9 @@ ENV_PATH = Path(__file__).resolve().parents[2] / ".env"
 
 def load_env() -> dict:
     """.env uses `KEY = value` (spaces around `=`), which plain `source` can't parse -- read
-    it directly instead of shelling out to a dotenv loader."""
+    it directly instead of shelling out to a dotenv loader. Also strips trailing `# comment`
+    annotations after the value (e.g. `HF_TOKEN = hf_xxx # Full access`) -- a naive strip()
+    would otherwise fold the comment text into the secret itself."""
     env = {}
     if ENV_PATH.exists():
         for line in ENV_PATH.read_text().splitlines():
@@ -26,7 +28,10 @@ def load_env() -> dict:
             if not line or line.startswith("#") or "=" not in line:
                 continue
             k, _, v = line.partition("=")
-            env[k.strip()] = v.strip()
+            v = v.strip()
+            if " #" in v:
+                v = v.split(" #", 1)[0].strip()
+            env[k.strip()] = v
     return env
 
 

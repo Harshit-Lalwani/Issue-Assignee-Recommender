@@ -10,6 +10,7 @@ import time
 
 sys.path.insert(0, "/root/Issue-Assignee-Recommender/src")
 
+import torch
 from sentence_transformers import SentenceTransformer
 
 from issue_assignee_recommender.baselines import BM25Baseline
@@ -51,7 +52,7 @@ def run_project(project_key: str, model: SentenceTransformer) -> list[dict]:
 
 def main():
     print(f"loading {MODEL_NAME} ...", file=sys.stderr)
-    model = SentenceTransformer(MODEL_NAME, device="cuda")
+    model = SentenceTransformer(MODEL_NAME, device="cuda" if torch.cuda.is_available() else "cpu")
 
     all_rows = []
     for project_key in PROJECTS:

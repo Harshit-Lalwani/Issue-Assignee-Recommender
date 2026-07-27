@@ -15,6 +15,7 @@ import sys
 import time
 
 import lightgbm as lgb
+import torch
 from sentence_transformers import SentenceTransformer
 
 sys.path.insert(0, "/root/Issue-Assignee-Recommender/src")
@@ -201,7 +202,10 @@ def summarize(label, results):
 
 def main():
     print("loading embedding model + shortlists ...", file=sys.stderr)
-    model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2", device="cuda")
+    model = SentenceTransformer(
+        "sentence-transformers/all-MiniLM-L6-v2",
+        device="cuda" if torch.cuda.is_available() else "cpu",
+    )
 
     all_examples = []
     for project_key in PROJECTS:

@@ -21,6 +21,7 @@ dependencies = [
     "uvicorn>=0.30",
     "pydantic>=2.7",
     "requests>=2.31",
+    "huggingface_hub>=0.24",
 ]
 
 [project.optional-dependencies]

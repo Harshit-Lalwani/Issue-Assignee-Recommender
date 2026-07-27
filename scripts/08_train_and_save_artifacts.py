@@ -9,6 +9,7 @@ import sys
 import time
 
 import lightgbm as lgb
+import torch
 from sentence_transformers import SentenceTransformer
 
 sys.path.insert(0, "/root/Issue-Assignee-Recommender/src")
@@ -25,7 +26,10 @@ def main():
 
     os.makedirs(MODEL_DIR, exist_ok=True)
     print("loading embedding model ...", file=sys.stderr)
-    model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2", device="cuda")
+    model = SentenceTransformer(
+        "sentence-transformers/all-MiniLM-L6-v2",
+        device="cuda" if torch.cuda.is_available() else "cpu",
+    )
 
     for project_key in PROJECTS:
         t0 = time.time()
