@@ -1,0 +1,43 @@
+HANDOFF.md
+CLAUDE.md
+
+# Data: raw dump + mongo dbpath (huge, not source-controllable) and trained model artifacts
+# (regenerable via scripts/08_train_and_save_artifacts.py) are ignored wholesale. Small
+# measured-results CSVs under data/processed/ are NOT ignored -- they're the evidence behind
+# every number in docs/, worth keeping in history.
+data/raw/
+data/models/
+data/processed/*.parquet
+*.bson
+*.zip
+*.duckdb
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+
+# Models / artifacts
+artifacts/
+*.faiss
+*.index
+mlruns/
+
+# Logs
+*.log
